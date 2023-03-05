@@ -4,25 +4,29 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 )
 
 func main() {
 	var (
 		protocol string = os.Args[1]
 		adress   string = os.Args[2]
+		wg       sync.WaitGroup
 	)
 
 	for i := 1; i <= 65535; i++ {
-		fmt.Printf("scanning port:%d", i)
-		var destination string = fmt.Sprintf("%s:%d", adress, i)
-		connection, errs := net.Dial(protocol, destination)
-		if errs == nil {
-			fmt.Println(" connection succssesful")
-			connection.Close()
-		} else {
-			fmt.Println(" connection refused")
-			continue
-		}
+		wg.Add(1)
+		go func(j int) {
+			var destination string = fmt.Sprintf("%s:%d", adress, j)
+			connection, errs := net.Dial(protocol, destination)
+			if errs == nil {
+				fmt.Printf("port:%d connection succssesful\n", j)
+				connection.Close()
+			}
+			wg.Done()
+		}(i)
+
 	}
+	wg.Wait()
 
 }
